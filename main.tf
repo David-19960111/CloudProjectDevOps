@@ -1,38 +1,28 @@
 resource "google_project" "my_project" {
-  name       = "My Project"
-  project_id = "your-project-id"
-  org_id     = "1234567"
+  name       = "ProjectCloudDevOps"
+  project_id = var.PROJECT_ID
 }
 
-resource "google_app_engine_application" "app" {
-  project     = google_project.my_project.project_id
-  location_id = "us-central"
+resource "google_app_engine_application" "node_app" {
+  project     = var.PROJECT_ID
+  location_id = var.REGION
 }
 
-
-
-resource "google_app_engine_application_url_dispatch_rules" "web_service" {
+resource "google_app_engine_application_url_dispatch_rules" "app-dispatch-rules" {
   dispatch_rules {
     domain  = "*"
     path    = "/*"
     service = "default"
   }
 
-  dispatch_rules {
-    domain  = "*"
-    path    = "/admin/*"
-    service = google_app_engine_standard_app_version.admin_v3.service
-  }
-}
-
 resource "google_app_engine_standard_app_version" "admin_v3" {
-  version_id = "v3"
-  project = ""
+  version_id = "v2"
+  project = var.PROJECT_ID
   service    = "admin"
   runtime    = "nodejs10"
 
   entrypoint {
-    shell = "node ./app.js"
+    shell = "node app.js"
   }
 
   deployment {
@@ -41,7 +31,9 @@ resource "google_app_engine_standard_app_version" "admin_v3" {
     }
   }
 
-  env_variables = {
+  instance_class = "F1"
+
+   env_variables = {
     port = "8080"
   }
 
@@ -64,20 +56,20 @@ resource "google_app_engine_standard_app_version" "admin_v3" {
 }
 
 data "archive_file" "archive_dist" {
-  type = ""
-  source_dir = ""
-  output_path = ""
+  type = "zip"
+  source_dir = "../app"
+  output_path = "../app/app.zip"
 }
 
 resource "google_storage_bucket" "bucket" {
-    project = ""
-    name     = "appengine-test-bucket"
-    location = "US"
+    project = var.PROJECT_ID
+    name     = var.BUCKET_PROJECT
+    location = var.REGION
     force_destroy = true
 }
 
 resource "google_storage_bucket_object" "object" {
-    name   = "hello-world.zip"
+    name   = "app.zip"
     bucket = google_storage_bucket.bucket.name
-    source = "./test-fixtures/hello-world.zip"
+    source = data.archive_file.archive_dist.output_path
 }
