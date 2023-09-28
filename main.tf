@@ -3,6 +3,10 @@ resource "google_project" "my_project" {
   project_id = var.PROJECT_ID
 }
 
+resource "google_endpoints_service" "openapi_service" {
+  service_name = "api-name.endpoints.${var.PROJECT_ID}.cloud.goog"
+  project      = var.PROJECT_ID
+}
 resource "google_app_engine_application" "node_app" {
   project     = var.PROJECT_ID
   location_id = var.REGION
